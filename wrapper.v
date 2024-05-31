@@ -1,4 +1,5 @@
 #include <X11/Xlib.h>
+#include <X11/keysym.h>
 #flag -lX11
 
 
@@ -18,8 +19,20 @@ mut:
 	xmaprequest       C.XMapRequestEvent
 	xconfigurerequest C.XConfigureRequestEvent
 	xunmap            C.XUnmapEvent
+	xmap 		  C.XMapEvent
 	xdestroywindow    C.XDestroyWindowEvent
 	xcreatewindow 	  C.XCreateWindowEvent
+}
+
+@[typedef]
+struct C.XMapEvent {
+	@type int
+	serial u32
+	send_event bool
+	display &C.Display = unsafe{nil}
+	event C.Window
+	window C.Window
+	override_redirect bool
 }
 
 @[typedef]
@@ -180,6 +193,7 @@ fn C.XSetStandardProperties(&C.Display, C.Window, &u8, &u8, C.Pixmap, &&u8, int,
 
 fn C.XSelectInput(&C.Display, C.Window, i32)
 
+fn C.XSetInputFocus(&C.Display, C.Window, int, C.Time)
 
 fn C.XCloseDisplay(&C.Display)
 
