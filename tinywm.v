@@ -22,47 +22,63 @@ fn main() {
 
 	attr := C.XSetWindowAttributes{event_mask: i32(C.SubstructureNotifyMask|C.StructureNotifyMask|C.KeyPressMask|C.KeyReleaseMask|C.ButtonPressMask|C.ButtonReleaseMask)}
 	C.XChangeWindowAttributes(dpy, C.XDefaultRootWindow(dpy), C.CWEventMask, &attr)
-	//C.XGrabButton(dpy, 1, C.Mod4Mask, root, true, C.ButtonPressMask|C.ButtonReleaseMask|C.PointerMotionMask, C.GrabModeAsync, C.GrabModeAsync, C.None, C.None)
-	//C.XGrabButton(dpy, 3, C.Mod4Mask, root, true, C.ButtonPressMask|C.ButtonReleaseMask|C.PointerMotionMask, C.GrabModeAsync, C.GrabModeAsync, C.None, C.None)
 
 
-	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XStringToKeysym(c"Return")), C.Mod1Mask, C.XDefaultRootWindow(dpy), true, C.GrabModeAsync, C.GrabModeAsync)
+	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_L), C.Mod4Mask, root, true, C.GrabModeAsync, C.GrabModeAsync)
+	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_H), C.Mod4Mask, root, true, C.GrabModeAsync, C.GrabModeAsync)
+	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_K), C.Mod4Mask|C.ShiftMask, root, true, C.GrabModeAsync, C.GrabModeAsync)
+	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_BackSpace), C.Mod4Mask, root, true, C.GrabModeAsync, C.GrabModeAsync)
+	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_Return), C.Mod4Mask, root, true, C.GrabModeAsync, C.GrabModeAsync)
 	
 	for {
 		C.XNextEvent(dpy, &ev)
 		match unsafe{ ev.@type } {
 			C.ButtonPress {
-				win_nb += 2 - unsafe{ ev.xbutton.button }
-				if win_nb >= windows.len {
-					win_nb = 0
-				} else if win_nb < 0 {
-					win_nb = windows.len - 1
-				}
-				C.XRaiseWindow(dpy, windows[win_nb])
-				C.XSetInputFocus(dpy, windows[win_nb], C.RevertToPointerRoot, C.CurrentTime)
+				C.XSetInputFocus(dpy, unsafe{ev.xbutton.window}, C.RevertToPointerRoot, C.CurrentTime)
+			}
+			C.ButtonRelease {
+				C.XSetInputFocus(dpy, unsafe{ev.xbutton.window}, C.RevertToPointerRoot, C.CurrentTime)
 			}
 			C.KeyPress {
-				key := ev.xkey
+				key := unsafe{ev.xkey}
 				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_Return) && key.state ^ C.Mod4Mask == 0 {
 					spawn os.execute("alacritty")
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_BackSpace) && key.state ^ C.Mod4Mask == 0 {
 					eprintln("TODO close window")
 				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_K) && key.state ^ C.Mod4Mask == 0 {
+				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_K) && key.state ^ (C.Mod4Mask|C.ShiftMask) == 0 {
 					break
+				}
+				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_L) && key.state ^ C.Mod4Mask == 0 {
+					win_nb += 1
+					if win_nb >= windows.len {
+						win_nb = 0
+					} else if win_nb < 0 {
+						win_nb = windows.len - 1
+					}
+					C.XRaiseWindow(dpy, windows[win_nb])
+					C.XSetInputFocus(dpy, windows[win_nb], C.RevertToPointerRoot, C.CurrentTime)
+				}
+				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_H) && key.state ^ C.Mod4Mask == 0 {
+					win_nb -= 1
+					if win_nb >= windows.len {
+						win_nb = 0
+					} else if win_nb < 0 {
+						win_nb = windows.len - 1
+					}
+					C.XRaiseWindow(dpy, windows[win_nb])
+					C.XSetInputFocus(dpy, windows[win_nb], C.RevertToPointerRoot, C.CurrentTime)
 				}
 			}
 			C.CreateNotify {
-				eprintln("Create Notify")
 			}
 			C.MapNotify {
-				eprintln("Map Notify")
 				windows << unsafe{ ev.xmap.window }
 				C.XMoveResizeWindow(dpy, windows.last(), 0, 0, width, height)
 				C.XSetInputFocus(dpy, windows.last(), C.RevertToPointerRoot, C.CurrentTime)
 			}
-			else {eprintln("ev type ${ev.@type}")}
+			else {}
 		}
 	}
 }
