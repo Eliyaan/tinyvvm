@@ -2,7 +2,6 @@
 #include <X11/keysym.h>
 #flag -lX11
 
-
 fn C.XSetInputFocus(&C.Display, C.Window, Revert, C.Time)
 
 struct C.XSizeHints {}
@@ -19,35 +18,35 @@ mut:
 	xmaprequest       C.XMapRequestEvent
 	xconfigurerequest C.XConfigureRequestEvent
 	xunmap            C.XUnmapEvent
-	xmap 		  C.XMapEvent
+	xmap              C.XMapEvent
 	xdestroywindow    C.XDestroyWindowEvent
-	xcreatewindow 	  C.XCreateWindowEvent
+	xcreatewindow     C.XCreateWindowEvent
 }
 
 @[typedef]
 struct C.XMapEvent {
-	@type int
-	serial u32
-	send_event bool
-	display &C.Display = unsafe{nil}
-	event C.Window
-	window C.Window
+	@type             int
+	serial            u32
+	send_event        bool
+	display           &C.Display = unsafe { nil }
+	event             C.Window
+	window            C.Window
 	override_redirect bool
 }
 
 @[typedef]
 struct C.XCreateWindowEvent {
-	@type  int
-	serial u32
-	send_event bool
-	display &C.Display = unsafe{ nil }
-	parent C.Window
-	window C.Window
-	x int
-	y int
-	width int
-	height int
-	border_width int
+	@type             int
+	serial            u32
+	send_event        bool
+	display           &C.Display = unsafe { nil }
+	parent            C.Window
+	window            C.Window
+	x                 int
+	y                 int
+	width             int
+	height            int
+	border_width      int
 	override_redirect bool
 }
 
@@ -247,6 +246,8 @@ fn C.XDefaultVisual(&C.Display, int) &C.Visual
 
 struct C.Colormap {}
 
+fn C.XOpenDisplay(&u8) &C.Display
+
 fn C.XDefaultColormap(&C.Display, int) C.Colormap
 
 fn C.XftDrawCreate(&C.Display, C.Window, &C.Visual, C.Colormap) &C.XftDraw
@@ -279,8 +280,8 @@ type C.Window = u64
 struct C.Screen {}
 
 struct KeyMod {
-	keysym KeySym
-	mod    int // u int
+	key KeySym
+	mod int // u int
 }
 
 struct KeyMap {
