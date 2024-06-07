@@ -176,6 +176,23 @@ struct C.XButtonEvent {
 	same_screen bool // same screen flag
 }
 
+fn C.XSetErrorHandler(fn (&C.Display, &C.XErrorEvent) int) int
+
+fn C.XGetErrorText(&C.Display, int, &u8, int)
+
+type C.XID = int
+
+@[typedef]
+struct C.XErrorEvent {
+	@type        int
+	display      &C.Display = unsafe { nil }
+	serial       u64 // serial number of failed request
+	error_code   u8  // error code of failed request
+	request_code u8  // Major op-code of failed request
+	minor_code   u8  // Minor op-code of failed request
+	resourceid   C.XID
+}
+
 fn C.XStringToKeysym(&u8) KeySym
 
 fn C.XNextEvent(&C.Display, &C.XEvent) int
