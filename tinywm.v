@@ -22,11 +22,11 @@ const root = C.XDefaultRootWindow(dpy)
 
 struct WinMan {
 mut:
-	ev      C.XEvent
-	windows []C.Window
+	ev        C.XEvent
+	windows   []C.Window
 	is_double []bool
-	win_nb  int
-	double bool
+	win_nb    int
+	double    bool
 	double_nb int
 }
 
@@ -82,17 +82,35 @@ fn grab_keys() {
 }
 
 fn (wm WinMan) close_window() {
-	mut ke := C.XEvent{
-		@type: C.ClientMessage
+	if wm.windows.len > 0 {
+		mut ke := C.XEvent{
+			@type: C.ClientMessage
+		}
+		unsafe {
+			if wm.double {
+				if wm.windows.len > wm.double_nb && wm.double_nb >= 0 {
+					ke.xclient.window = wm.windows[wm.double_nb]
+				} else {
+					return
+				}
+			} else {
+				if wm.windows.len > wm.win_nb && wm.win_nb >= 0 {
+					ke.xclient.window = wm.windows[wm.win_nb]
+				} else {
+					return
+				}
+			}
+			ke.xclient.message_type = C.XInternAtom(dpy, c'WM_PROTOCOLS', true)
+			ke.xclient.format = 32
+			ke.xclient.data.l[0] = C.XInternAtom(dpy, c'WM_DELETE_WINDOW', true)
+			ke.xclient.data.l[1] = C.CurrentTime
+		}
+		if wm.double {
+			C.XSendEvent(dpy, wm.windows[wm.double_nb], false, C.NoEventMask, &ke)
+		} else {
+			C.XSendEvent(dpy, wm.windows[wm.win_nb], false, C.NoEventMask, &ke)
+		}
 	}
-	unsafe {
-		ke.xclient.window = wm.windows[wm.win_nb]
-		ke.xclient.message_type = C.XInternAtom(dpy, c'WM_PROTOCOLS', true)
-		ke.xclient.format = 32
-		ke.xclient.data.l[0] = C.XInternAtom(dpy, c'WM_DELETE_WINDOW', true)
-		ke.xclient.data.l[1] = C.CurrentTime
-	}
-	C.XSendEvent(dpy, wm.windows[wm.win_nb], false, C.NoEventMask, &ke)
 }
 
 fn (mut wm WinMan) show_window() {
@@ -175,11 +193,11 @@ fn main() {
 				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_Tab) && key.state ^ mod_super == 0 {
 					wm.double = !wm.double
 					if wm.double {
-						if wm.is_double[wm.double_nb] {
+						if wm.is_double[wm.double_nb] or { false } {
 							wm.show_window()
 						}
 					} else {
-						if !wm.is_double[wm.win_nb] {
+						if !wm.is_double[wm.win_nb] or { false } {
 							wm.show_window()
 						}
 					}
@@ -326,7 +344,6 @@ fn main() {
 				if unmapped_i != -1 {
 					wm.windows.delete(unmapped_i)
 					wm.is_double.delete(unmapped_i)
-					wm.show_window()
 				}
 			}
 			else {}
