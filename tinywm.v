@@ -88,13 +88,13 @@ fn (wm WinMan) close_window() {
 		}
 		unsafe {
 			if wm.double {
-				if wm.windows.len > wm.double_nb && wm.double_nb >= 0 {
+				if wm.windows.len > wm.double_nb && wm.double_nb >= 0 && wm.is_double[wm.double_nb] {
 					ke.xclient.window = wm.windows[wm.double_nb]
 				} else {
 					return
 				}
 			} else {
-				if wm.windows.len > wm.win_nb && wm.win_nb >= 0 {
+				if wm.windows.len > wm.win_nb && wm.win_nb >= 0 && !wm.is_double[wm.win_nb] {
 					ke.xclient.window = wm.windows[wm.win_nb]
 				} else {
 					return
@@ -232,16 +232,28 @@ fn main() {
 				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_L) && key.state ^ mod_super == 0 {
 					if wm.double {
 						wm.double_nb += 1
+						for !(wm.is_double[wm.double_nb] or {wm.double_nb=-1;false}) {
+							wm.double_nb += 1
+						}
 					} else {
 						wm.win_nb += 1
+						for wm.is_double[wm.win_nb] or {wm.win_nb=-1;true} {
+							wm.win_nb += 1
+						}
 					}
 					wm.show_window()
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_H) && key.state ^ mod_super == 0 {
 					if wm.double {
 						wm.double_nb -= 1
+						for !(wm.is_double[wm.double_nb] or {wm.double_nb=wm.windows.len;false}) {
+							wm.double_nb -= 1
+						}
 					} else {
 						wm.win_nb -= 1
+						for wm.is_double[wm.win_nb] or {wm.win_nb=wm.windows.len;true} {
+							wm.win_nb -= 1
+						}
 					}
 					wm.show_window()
 				}
