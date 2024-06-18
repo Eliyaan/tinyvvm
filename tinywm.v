@@ -157,7 +157,7 @@ fn main() {
 
 	grab_keys()
 
-	for {
+	main_l: for {
 		time.sleep(10 * time.millisecond)
 		C.XNextEvent(dpy, &wm.ev)
 		match unsafe { wm.ev.@type } {
@@ -232,13 +232,23 @@ fn main() {
 				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_L) && key.state ^ mod_super == 0 {
 					if wm.double {
 						wm.double_nb += 1
+						mut i := 0
 						for !(wm.is_double[wm.double_nb] or {wm.double_nb=-1;false}) {
 							wm.double_nb += 1
+							i++
+							if i > wm.windows.len {
+								continue main_l
+							}
 						}
 					} else {
 						wm.win_nb += 1
+						mut i := 0
 						for wm.is_double[wm.win_nb] or {wm.win_nb=-1;true} {
 							wm.win_nb += 1
+							i++
+							if i > wm.windows.len {
+								continue main_l
+							}
 						}
 					}
 					wm.show_window()
@@ -246,13 +256,23 @@ fn main() {
 				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_H) && key.state ^ mod_super == 0 {
 					if wm.double {
 						wm.double_nb -= 1
+						mut i := 0
 						for !(wm.is_double[wm.double_nb] or {wm.double_nb=wm.windows.len;false}) {
 							wm.double_nb -= 1
+							i++
+							if i > wm.windows.len {
+								continue main_l
+							}
 						}
 					} else {
 						wm.win_nb -= 1
+						mut i := 0
 						for wm.is_double[wm.win_nb] or {wm.win_nb=wm.windows.len;true} {
 							wm.win_nb -= 1
+							i++
+							if i > wm.windows.len {
+								continue main_l
+							}
 						}
 					}
 					wm.show_window()
