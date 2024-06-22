@@ -19,3 +19,11 @@ const bright_up_key = KeyMod{C.XK_C, mod_super}
 const bright_up_name = 'brightnessctl set 1000-'
 const bright_down_key = KeyMod{C.XK_C, mod_super | mod_shift}
 const bright_down_name = 'brightnessctl set 1000+'
+
+// Constants to manage the size of the different screens
+const width = 1366
+const height = 768
+const double_x = 1366
+const double_y = 0
+const double_w = 1920
+const double_h = 1080

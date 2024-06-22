@@ -5,12 +5,6 @@ const mod_super = C.Mod4Mask
 const mod_shift = C.ShiftMask
 
 // Get them automatically for the current window
-const width = 1366
-const height = 768
-const double_x = 1366
-const double_y = 0
-const double_w = 1920
-const double_h = 1080
 const catched_events = i32(C.SubstructureNotifyMask | C.StructureNotifyMask | C.KeyPressMask | C.KeyReleaseMask | C.ButtonPressMask | C.ButtonReleaseMask)
 
 const dpy = C.XOpenDisplay(unsafe { nil })
