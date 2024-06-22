@@ -11,14 +11,14 @@ const screenshot_key = KeyMod{C.XK_G, mod_super}
 const screenshot_name = 'ksnip -r'
 const sound_up_key = KeyMod{C.XK_V, mod_super}
 const sound_up_name = "amixer sset 'Master' 5%+"
-const sound_down_key = KeyMod{C.XK_V, mod_super}
+const sound_down_key = KeyMod{C.XK_V, mod_super | mod_shift}
 const sound_down_name = "amixer sset 'Master' 5%-"
 const bluetooth_key = KeyMod{C.XK_B, mod_super}
 const bluetooth_name = 'bluetoothctl power'
 const bright_up_key = KeyMod{C.XK_C, mod_super}
-const bright_up_name = 'brightnessctl set 1000-'
+const bright_up_name = 'brightnessctl set 1000+'
 const bright_down_key = KeyMod{C.XK_C, mod_super | mod_shift}
-const bright_down_name = 'brightnessctl set 1000+'
+const bright_down_name = 'brightnessctl set 1000-'
 
 // Constants to manage the size of the different screens
 const width = 1366

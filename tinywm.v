@@ -215,7 +215,7 @@ fn main() {
 					spawn os.execute(bright_up_name)
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, bright_down_key.key)
-					&& key.state ^ bright_down_key.key == 0 {
+					&& key.state ^ bright_down_key.mod == 0 {
 					spawn os.execute(bright_down_name)
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, bluetooth_key.key)
