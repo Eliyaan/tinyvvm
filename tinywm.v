@@ -4,10 +4,6 @@ import time
 const mod_super = C.Mod4Mask
 const mod_shift = C.ShiftMask
 
-const terminal_name = 'alacritty'
-const terminal_key = KeyMod{C.XK_Return, mod_super}
-const close_key = KeyMod{C.XK_BackSpace, mod_super}
-const wm_quit_key = KeyMod{C.XK_E, mod_super | mod_shift}
 // Get them automatically for the current window
 const width = 1366
 const height = 768
@@ -31,24 +27,24 @@ mut:
 }
 
 fn grab_keys() {
-	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_Tab), mod_super, root, true, C.GrabModeAsync,
-		C.GrabModeAsync)
-	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_D), mod_super, root, true, C.GrabModeAsync,
-		C.GrabModeAsync)
-	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_N), mod_super, root, true, C.GrabModeAsync,
-		C.GrabModeAsync)
-	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_G), mod_super, root, true, C.GrabModeAsync,
-		C.GrabModeAsync)
-	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_B), mod_super, root, true, C.GrabModeAsync,
-		C.GrabModeAsync)
-	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_V), mod_super, root, true, C.GrabModeAsync,
-		C.GrabModeAsync)
-	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_C), mod_super, root, true, C.GrabModeAsync,
-		C.GrabModeAsync)
-	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_V), mod_super | mod_shift, root, true,
+	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, desktop_key.key), desktop_key.mod, root, true,
 		C.GrabModeAsync, C.GrabModeAsync)
-	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_C), mod_super | mod_shift, root, true,
-		C.GrabModeAsync, C.GrabModeAsync)
+	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, launch_app_key.key), launch_app_key.mod, root,
+		true, C.GrabModeAsync, C.GrabModeAsync)
+	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, wifi_key.key), wifi_key.mod, root, true, C.GrabModeAsync,
+		C.GrabModeAsync)
+	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, screenshot_key.key), screenshot_key.mod, root,
+		true, C.GrabModeAsync, C.GrabModeAsync)
+	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, bluetooth_key.key), bluetooth_key.mod, root,
+		true, C.GrabModeAsync, C.GrabModeAsync)
+	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, sound_up_key.key), sound_up_key.mod, root,
+		true, C.GrabModeAsync, C.GrabModeAsync)
+	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, bright_up_key.key), bright_up_key.mod, root,
+		true, C.GrabModeAsync, C.GrabModeAsync)
+	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, sound_down_key.key), sound_down_key.mod, root,
+		true, C.GrabModeAsync, C.GrabModeAsync)
+	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, bright_down_key.key), bright_down_key.mod,
+		root, true, C.GrabModeAsync, C.GrabModeAsync)
 	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_1), mod_super, root, true, C.GrabModeAsync,
 		C.GrabModeAsync)
 	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_2), mod_super, root, true, C.GrabModeAsync,
@@ -183,14 +179,16 @@ fn main() {
 					&& key.state ^ wm_quit_key.mod == 0 {
 					break
 				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_N) && key.state ^ C.Mod4Mask == 0 {
+				if key.keycode == C.XKeysymToKeycode(dpy, wifi_key.key)
+					&& key.state ^ wifi_key.mod == 0 {
 					if os.execute('nmcli r wifi').output.contains('enabled') {
-						spawn os.execute('nmcli r wifi off')
+						spawn os.execute(wifi_name + ' off')
 					} else {
-						spawn os.execute('nmcli r wifi on')
+						spawn os.execute(wifi_name + ' on')
 					}
 				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_Tab) && key.state ^ mod_super == 0 {
+				if key.keycode == C.XKeysymToKeycode(dpy, desktop_key.key)
+					&& key.state ^ desktop_key.mod == 0 {
 					wm.double = !wm.double
 					if wm.double {
 						if wm.is_double[wm.double_nb] or { false } {
@@ -202,38 +200,46 @@ fn main() {
 						}
 					}
 				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_G) && key.state ^ mod_super == 0 {
-					spawn os.execute('ksnip -r')
+				if key.keycode == C.XKeysymToKeycode(dpy, screenshot_key.key)
+					&& key.state ^ screenshot_key.mod == 0 {
+					spawn os.execute(screenshot_name)
 				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_D) && key.state ^ mod_super == 0 {
-					spawn os.execute('rofi -show drun')
+				if key.keycode == C.XKeysymToKeycode(dpy, launch_app_key.key)
+					&& key.state ^ launch_app_key.mod == 0 {
+					spawn os.execute(launch_app_name)
 				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_V) && key.state ^ mod_super == 0 {
-					spawn os.execute("amixer sset 'Master' 5%+")
+				if key.keycode == C.XKeysymToKeycode(dpy, sound_up_key.key)
+					&& key.state ^ sound_up_key.mod == 0 {
+					spawn os.execute(sound_up_name)
 				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_V)
-					&& key.state ^ (mod_super | mod_shift) == 0 {
-					spawn os.execute("amixer sset 'Master' 5%-")
+				if key.keycode == C.XKeysymToKeycode(dpy, sound_down_key.key)
+					&& key.state ^ sound_down_key.mod == 0 {
+					spawn os.execute(sound_down_name)
 				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_C) && key.state ^ mod_super == 0 {
-					spawn os.execute('brightnessctl set 1000+')
+				if key.keycode == C.XKeysymToKeycode(dpy, bright_up_key.key)
+					&& key.state ^ bright_up_key.mod == 0 {
+					spawn os.execute(bright_up_name)
 				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_C)
-					&& key.state ^ (mod_super | mod_shift) == 0 {
-					spawn os.execute('brightnessctl set 1000-')
+				if key.keycode == C.XKeysymToKeycode(dpy, bright_down_key.key)
+					&& key.state ^ bright_down_key.key == 0 {
+					spawn os.execute(bright_down_name)
 				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_B) && key.state ^ mod_super == 0 {
+				if key.keycode == C.XKeysymToKeycode(dpy, bluetooth_key.key)
+					&& key.state ^ bluetooth_key.mod == 0 {
 					if os.execute("bluetoothctl show | awk 'NR==7 {printf $2}'").output.contains('no') {
-						spawn os.execute('bluetoothctl power on')
+						spawn os.execute(bluetooth_name + ' on')
 					} else {
-						spawn os.execute('bluetoothctl power off')
+						spawn os.execute(bluetooth_name + ' off')
 					}
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_L) && key.state ^ mod_super == 0 {
 					if wm.double {
 						wm.double_nb += 1
 						mut i := 0
-						for !(wm.is_double[wm.double_nb] or {wm.double_nb=-1;false}) {
+						for !(wm.is_double[wm.double_nb] or {
+							wm.double_nb = -1
+							false
+						}) {
 							wm.double_nb += 1
 							i++
 							if i > wm.windows.len {
@@ -243,7 +249,10 @@ fn main() {
 					} else {
 						wm.win_nb += 1
 						mut i := 0
-						for wm.is_double[wm.win_nb] or {wm.win_nb=-1;true} {
+						for wm.is_double[wm.win_nb] or {
+							wm.win_nb = -1
+							true
+						} {
 							wm.win_nb += 1
 							i++
 							if i > wm.windows.len {
@@ -257,7 +266,10 @@ fn main() {
 					if wm.double {
 						wm.double_nb -= 1
 						mut i := 0
-						for !(wm.is_double[wm.double_nb] or {wm.double_nb=wm.windows.len;false}) {
+						for !(wm.is_double[wm.double_nb] or {
+							wm.double_nb = wm.windows.len
+							false
+						}) {
 							wm.double_nb -= 1
 							i++
 							if i > wm.windows.len {
@@ -267,7 +279,10 @@ fn main() {
 					} else {
 						wm.win_nb -= 1
 						mut i := 0
-						for wm.is_double[wm.win_nb] or {wm.win_nb=wm.windows.len;true} {
+						for wm.is_double[wm.win_nb] or {
+							wm.win_nb = wm.windows.len
+							true
+						} {
 							wm.win_nb -= 1
 							i++
 							if i > wm.windows.len {
