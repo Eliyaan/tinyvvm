@@ -1,4 +1,4 @@
-A very double screen X window manager.
+A very simple and lightweight double screen X window manager.
 
 The keybinds / commands associated to them are changeable in config.v (you need to recompile and relaunch the wm for the changes to take place).
 
