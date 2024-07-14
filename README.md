@@ -24,3 +24,5 @@ Clone the project with git. Then compile it by running `v .` in the project's di
 - Super+Enter -> Open a terminal (alacritty)
 
 ¹the windows are associated with a number depending on the order they were spawned. First window: 0, second: 1 etc... 
+
+A big thanks to tinywm for showing how to do it: https://github.com/mackstann/tinywm
