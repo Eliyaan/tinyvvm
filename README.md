@@ -4,9 +4,15 @@ A very simple, efficient and lightweight double screen X window manager.
 
 The goal of this project is to show that it's easy to make your custom window manager, that we dont need to waste GBs of ram when showing windows and to provide a window manager that you can understand by looking at the code (so that you can shape it according to your needs or create your own entirely). 
 
-A very big motivation for this project is to show that it is simple to do your own things and that we can make simple and lightweight software. Simple and lightweight often go hand in hand. Dont hesitate to try to do your own things, it may be scary because the existing well known projects have enormous code bases but we dont need this much to make a simple wm (tinyvvm.v ~400LoC). So this project is here to help anyone that wants to make their own window manager, to see how one works and and to have somewhere to start.
+A very big motivation for this project is to show that it is simple to do your own things and that we can make simple and lightweight software. Simple and lightweight often go hand in hand. Dont hesitate to try to do your own things, it may be scary because the existing well known projects have enormous code bases but we dont need this much to make a simple wm (`tinyvvm.v` ~400LoC). 
 
-The essential code that you will modify if you want to is in tinyvvm.v (only ~400LoC).
+So this project is here to help anyone who :
+- wants to make their own window manager
+- to see how one works 
+- to have somewhere to start
+- wants a lightweight usable window manager (I use it as my everyday wm and it's the first one I dont complain about (very happy about that), so it's usable)
+
+The essential code that you will modify if you want to is in `tinyvvm.v` (only ~400LoC).
 
 ## Installation
 
