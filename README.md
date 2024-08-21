@@ -27,7 +27,7 @@ The keybinds / commands associated to them are changeable in config.v (you need 
 - Super+L -> Cycle up in the windows of the current desktop
 - Super+K -> Cycle down 
 - Super+Tab -> Go to the other desktop
-- Super+(1,2,3,4,5,6,7,8,9,0) -> Rise the window associated with the number¹ on the current desktop
+- Super+(1,2,3,4,5,6,7,8,9) -> Rise the window associated with the number¹ on the current desktop
 - Super+Delete -> Ask the current window to close itself
 - Super+N -> toggle wifi (nmcli)
 - Super+B -> Toggle bluetooth (bluetoothctl)

@@ -13,11 +13,14 @@ const root = C.XDefaultRootWindow(dpy)
 struct WinMan {
 mut:
 	ev        C.XEvent
-	windows   []C.Window
-	is_double []bool
-	win_nb    int
+	windows   []C.Window // usable with number keys
+	order_simple []C.Window // go through with H/L keys
+	order_double []C.Window 
+	i_simple   int
+	i_double   int
+	stack_simple []C.Window // on the first screen
+	stack_double []C.Window // second
 	double    bool
-	double_nb int
 }
 
 fn grab_keys() {
@@ -57,8 +60,6 @@ fn grab_keys() {
 		C.GrabModeAsync)
 	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_9), mod_super, root, true, C.GrabModeAsync,
 		C.GrabModeAsync)
-	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_0), mod_super, root, true, C.GrabModeAsync,
-		C.GrabModeAsync)
 	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_L), mod_super, root, true, C.GrabModeAsync,
 		C.GrabModeAsync)
 	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_H), mod_super, root, true, C.GrabModeAsync,
@@ -71,6 +72,8 @@ fn grab_keys() {
 		true, C.GrabModeAsync, C.GrabModeAsync)
 }
 
+
+// Called when asking to close current window
 fn (wm WinMan) close_window() {
 	if wm.windows.len > 0 {
 		mut ke := C.XEvent{
@@ -78,14 +81,14 @@ fn (wm WinMan) close_window() {
 		}
 		unsafe {
 			if wm.double {
-				if wm.windows.len > wm.double_nb && wm.double_nb >= 0 && wm.is_double[wm.double_nb] {
-					ke.xclient.window = wm.windows[wm.double_nb]
+				if wm.stack_double.len > 0 {
+					ke.xclient.window = wm.stack_double.last()
 				} else {
-					return
+					return // No window needs to be killed
 				}
 			} else {
-				if wm.windows.len > wm.win_nb && wm.win_nb >= 0 && !wm.is_double[wm.win_nb] {
-					ke.xclient.window = wm.windows[wm.win_nb]
+				if wm.stack_simple.len > 0 {
+					ke.xclient.window = wm.stack_simple.last()
 				} else {
 					return
 				}
@@ -96,34 +99,26 @@ fn (wm WinMan) close_window() {
 			ke.xclient.data.l[1] = C.CurrentTime
 		}
 		if wm.double {
-			C.XSendEvent(dpy, wm.windows[wm.double_nb], false, C.NoEventMask, &ke)
+			C.XSendEvent(dpy, wm.stack_double.last(), false, C.NoEventMask, &ke)
 		} else {
-			C.XSendEvent(dpy, wm.windows[wm.win_nb], false, C.NoEventMask, &ke)
+			C.XSendEvent(dpy, wm.stack_simple.last(), false, C.NoEventMask, &ke)
 		}
 	}
 }
 
 fn (mut wm WinMan) show_window() {
-	mut nb := if wm.double {
-		wm.double_nb
-	} else {
-		wm.win_nb
-	}
-	if wm.windows.len > 0 {
-		if nb >= wm.windows.len {
-			nb = 0
-		} else if wm.win_nb < 0 {
-			nb = wm.windows.len - 1
-		}
-		C.XRaiseWindow(dpy, wm.windows[nb])
-		C.XSetInputFocus(dpy, wm.windows[nb], C.RevertToPointerRoot, C.CurrentTime)
-		wm.is_double[nb] = wm.double
-		if wm.double {
-			C.XMoveResizeWindow(dpy, wm.windows[nb], double_x, double_y, double_w, double_h)
-			wm.double_nb = nb
+	if (wm.stack_simple.len > 0 && !wm.double) || (wm.stack_double.len > 0 && wm.double) {
+		win := if wm.double {
+			wm.stack_double.last()
 		} else {
-			C.XMoveResizeWindow(dpy, wm.windows[nb], 0, 0, width, height)
-			wm.win_nb = nb
+			wm.stack_simple.last()
+		}
+		C.XRaiseWindow(dpy, win)
+		C.XSetInputFocus(dpy, win, C.RevertToPointerRoot, C.CurrentTime)
+		if wm.double {
+			C.XMoveResizeWindow(dpy, win, double_x, double_y, double_w, double_h)
+		} else {
+			C.XMoveResizeWindow(dpy, win, 0, 0, width, height)
 		}
 	}
 }
@@ -133,6 +128,46 @@ fn error_handler(display &C.Display, event &C.XErrorEvent) int {
 	C.XGetErrorText(display, event.error_code, error_message.data, error_message.len)
 	eprintln(unsafe { cstring_to_vstring(error_message.data) })
 	return 0
+}
+
+fn (mut wm WinMan) check_goto_window(nb_key int, key C.XKeyEvent) {
+	if key.keycode == C.XKeysymToKeycode(dpy, nb_key) && key.state ^ mod_super == 0 {
+		win := wm.windows[nb_key-0x31] or {return} // https://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h
+		if wm.double {
+			i := wm.order_double.index(win)
+			if i != -1 {
+				s_i := wm.stack_double.index(win)
+					wm.stack_double.delete(s_i)
+				wm.stack_double << win
+				wm.i_double = i
+			} else {
+				o_i := wm.order_simple.index(win)
+					wm.order_simple.delete(o_i)
+				s_i := wm.stack_simple.index(win)
+					wm.stack_simple.delete(s_i)
+				wm.i_double = wm.order_double.len
+				wm.order_double << win
+				wm.stack_double << win
+			}
+		} else {
+			i := wm.order_simple.index(win)
+			if i != -1 {
+				s_i := wm.stack_simple.index(win)
+					wm.stack_simple.delete(s_i)
+				wm.stack_simple << win
+				wm.i_double = i
+			} else {
+				o_i := wm.order_double.index(win)
+					wm.order_double.delete(o_i)
+				s_i := wm.stack_double.index(win)
+					wm.stack_double.delete(s_i)
+				wm.i_simple = wm.order_simple.len
+				wm.order_simple << win
+				wm.stack_simple << win
+			}
+		}
+		wm.show_window()
+	}
 }
 
 fn main() {
@@ -148,7 +183,7 @@ fn main() {
 	grab_keys()
 
 	main_l: for {
-		time.sleep(10 * time.millisecond)
+		time.sleep(30 * time.millisecond)
 		C.XNextEvent(dpy, &wm.ev)
 		match unsafe { wm.ev.@type } {
 			// C.ButtonPress {
@@ -183,13 +218,13 @@ fn main() {
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, desktop_key.key)
 					&& key.state ^ desktop_key.mod == 0 {
-					wm.double = !wm.double
+					wm.double = !wm.double // change of screen
 					if wm.double {
-						if wm.is_double[wm.double_nb] or { false } {
+						if wm.order_double.len > 0 {
 							wm.show_window()
 						}
 					} else {
-						if !wm.is_double[wm.win_nb] or { false } {
+						if wm.order_simple.len > 0 {
 							wm.show_window()
 						}
 					}
@@ -228,163 +263,117 @@ fn main() {
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_L) && key.state ^ mod_super == 0 {
 					if wm.double {
-						wm.double_nb += 1
-						mut i := 0
-						for !(wm.is_double[wm.double_nb] or {
-							wm.double_nb = -1
-							false
-						}) {
-							wm.double_nb += 1
-							i++
-							if i > wm.windows.len {
-								continue main_l
+						if wm.order_double.len > 0 {
+							wm.i_double += 1
+							if wm.i_double >= wm.order_double.len {
+								wm.i_double = 0
 							}
+							win := wm.order_double[wm.i_double]
+							s_i := wm.stack_double.index(win)
+								wm.stack_double.delete(s_i)
+							wm.stack_double << win
+						} else {
+							continue main_l
 						}
 					} else {
-						wm.win_nb += 1
-						mut i := 0
-						for wm.is_double[wm.win_nb] or {
-							wm.win_nb = -1
-							true
-						} {
-							wm.win_nb += 1
-							i++
-							if i > wm.windows.len {
-								continue main_l
+						if wm.order_simple.len > 0 {
+							wm.i_simple += 1
+							if wm.i_simple >= wm.order_simple.len {
+								wm.i_simple = 0
 							}
+							win := wm.order_simple[wm.i_simple]
+							s_i := wm.stack_simple.index(win)
+								wm.stack_simple.delete(s_i)
+							wm.stack_simple << win
+						} else {
+							continue main_l
 						}
 					}
 					wm.show_window()
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_H) && key.state ^ mod_super == 0 {
 					if wm.double {
-						wm.double_nb -= 1
-						mut i := 0
-						for !(wm.is_double[wm.double_nb] or {
-							wm.double_nb = wm.windows.len
-							false
-						}) {
-							wm.double_nb -= 1
-							i++
-							if i > wm.windows.len {
-								continue main_l
+						if wm.order_double.len > 0 {
+							wm.i_double -= 1
+							if wm.i_double < 0 {
+								wm.i_double = wm.order_double.len - 1
 							}
+							win := wm.order_double[wm.i_double]
+							s_i := wm.stack_double.index(win)
+								wm.stack_double.delete(s_i)
+							wm.stack_double << win
+						} else {
+							continue main_l
 						}
 					} else {
-						wm.win_nb -= 1
-						mut i := 0
-						for wm.is_double[wm.win_nb] or {
-							wm.win_nb = wm.windows.len
-							true
-						} {
-							wm.win_nb -= 1
-							i++
-							if i > wm.windows.len {
-								continue main_l
+						if wm.order_simple.len > 0 {
+							wm.i_simple -= 1
+							if wm.i_simple < 0 {
+								wm.i_simple = wm.order_simple.len - 1
 							}
+							win := wm.order_simple[wm.i_simple]
+							s_i := wm.stack_simple.index(win)
+								wm.stack_simple.delete(s_i)
+							wm.stack_simple << win
+						} else {
+							continue main_l
 						}
 					}
 					wm.show_window()
 				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_1) && key.state ^ mod_super == 0 {
-					if wm.double {
-						wm.double_nb = 0
-					} else {
-						wm.win_nb = 0
-					}
-					wm.show_window()
-				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_2) && key.state ^ mod_super == 0 {
-					if wm.double {
-						wm.double_nb = 1
-					} else {
-						wm.win_nb = 1
-					}
-					wm.show_window()
-				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_3) && key.state ^ mod_super == 0 {
-					if wm.double {
-						wm.double_nb = 2
-					} else {
-						wm.win_nb = 2
-					}
-					wm.show_window()
-				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_4) && key.state ^ mod_super == 0 {
-					if wm.double {
-						wm.double_nb = 3
-					} else {
-						wm.win_nb = 3
-					}
-					wm.show_window()
-				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_5) && key.state ^ mod_super == 0 {
-					if wm.double {
-						wm.double_nb = 4
-					} else {
-						wm.win_nb = 4
-					}
-					wm.show_window()
-				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_6) && key.state ^ mod_super == 0 {
-					if wm.double {
-						wm.double_nb = 5
-					} else {
-						wm.win_nb = 5
-					}
-					wm.show_window()
-				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_7) && key.state ^ mod_super == 0 {
-					if wm.double {
-						wm.double_nb = 6
-					} else {
-						wm.win_nb = 6
-					}
-					wm.show_window()
-				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_8) && key.state ^ mod_super == 0 {
-					if wm.double {
-						wm.double_nb = 7
-					} else {
-						wm.win_nb = 7
-					}
-					wm.show_window()
-				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_9) && key.state ^ mod_super == 0 {
-					if wm.double {
-						wm.double_nb = 8
-					} else {
-						wm.win_nb = 8
-					}
-					wm.show_window()
-				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_0) && key.state ^ mod_super == 0 {
-					if wm.double {
-						wm.double_nb = 9
-					} else {
-						wm.win_nb = 9
-					}
-					wm.show_window()
-				}
+				wm.check_goto_window(C.XK_1, key)
+				wm.check_goto_window(C.XK_2, key)
+				wm.check_goto_window(C.XK_3, key)
+				wm.check_goto_window(C.XK_4, key)
+				wm.check_goto_window(C.XK_5, key)
+				wm.check_goto_window(C.XK_6, key)
+				wm.check_goto_window(C.XK_7, key)
+				wm.check_goto_window(C.XK_8, key)
+				wm.check_goto_window(C.XK_9, key)
 			}
 			C.CreateNotify {}
 			C.MapNotify {
 				if unsafe { !wm.ev.xmap.override_redirect } {
 					wm.windows << unsafe { wm.ev.xmap.window }
-					wm.is_double << wm.double
 					if wm.double {
-						wm.double_nb = wm.windows.len - 1
+						wm.stack_double << wm.windows.last()
+						wm.order_double << wm.windows.last()
+						wm.i_double = wm.order_double.len -1
 					} else {
-						wm.win_nb = wm.windows.len - 1
+						wm.stack_simple << wm.windows.last()
+						wm.order_simple << wm.windows.last()
+						wm.i_simple = wm.order_simple.len - 1
 					}
 					wm.show_window()
 				}
 			}
 			C.UnmapNotify {
-				unmapped_i := wm.windows.index(unsafe { wm.ev.xunmap.window })
+				win := unsafe{wm.ev.xunmap.window}
+				unmapped_i := wm.windows.index(win)
 				if unmapped_i != -1 {
 					wm.windows.delete(unmapped_i)
-					wm.is_double.delete(unmapped_i)
+					if win in wm.order_double {
+						o_i := wm.order_double.index(win)
+						wm.order_double.delete(o_i)
+						s_i := wm.stack_double.index(win)
+						wm.stack_double.delete(s_i)
+					} else {
+						o_i := wm.order_simple.index(win)
+						wm.order_simple.delete(o_i)
+						s_i := wm.stack_simple.index(win)
+						wm.stack_simple.delete(s_i)
+					}
+					if wm.double {
+						if wm.stack_double.len > 0 {
+							wm.i_double = wm.order_double.index(wm.stack_double.last())
+							C.XMoveResizeWindow(dpy, wm.stack_double.last(), double_x, double_y, double_w, double_h)
+						}
+					} else {
+						if wm.stack_simple.len > 0 {
+							wm.i_simple = wm.order_simple.index(wm.stack_simple.last())
+							C.XMoveResizeWindow(dpy, wm.stack_simple.last(), 0, 0, width, height)
+						}
+					}
 				}
 			}
 			else {}
