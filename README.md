@@ -26,8 +26,9 @@ The keybinds / commands associated to them are changeable in config.v (you need 
 - Super+D -> Application launcher (rofi)
 - Super+L -> Cycle up in the windows of the current desktop
 - Super+K -> Cycle down 
-- Super+Tab -> Go to the other desktop
 - Super+(1,2,3,4,5,6,7,8,9) -> Rise the window associated with the number¹ on the current desktop
+- Super+R -> refocus window (in case its not automatic²)
+- Super+Tab -> Go to the other desktop
 - Super+Delete -> Ask the current window to close itself
 - Super+N -> toggle wifi (nmcli)
 - Super+B -> Toggle bluetooth (bluetoothctl)
@@ -37,6 +38,8 @@ The keybinds / commands associated to them are changeable in config.v (you need 
 - Super+Shift+C -> Lower brightness (brightnessctl)
 - Super+Enter -> Open a terminal (alacritty)
 
+
 ¹the windows are associated with a number depending on the order they were spawned. First window: 0, second: 1 etc... 
+²if you can reproduce a situation where it does not focus, please open an issue so we can keep track of it
 
 A big thanks to tinywm for showing how to do it: https://github.com/mackstann/tinywm

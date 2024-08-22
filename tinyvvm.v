@@ -64,6 +64,8 @@ fn grab_keys() {
 		C.GrabModeAsync)
 	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_H), mod_super, root, true, C.GrabModeAsync,
 		C.GrabModeAsync)
+	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, C.XK_R), mod_super, root, true, C.GrabModeAsync,
+		C.GrabModeAsync)
 	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, wm_quit_key.key), wm_quit_key.mod, root, true,
 		C.GrabModeAsync, C.GrabModeAsync)
 	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, close_key.key), close_key.mod, root, true,
@@ -170,6 +172,20 @@ fn (mut wm WinMan) check_goto_window(nb_key int, key C.XKeyEvent) {
 	}
 }
 
+fn (mut wm WinMan) focus_stack_top() {
+	if wm.double {
+		if wm.stack_double.len > 0 {
+			wm.i_double = wm.order_double.index(wm.stack_double.last())
+			C.XMoveResizeWindow(dpy, wm.stack_double.last(), double_x, double_y, double_w, double_h)
+		}
+	} else {
+		if wm.stack_simple.len > 0 {
+			wm.i_simple = wm.order_simple.index(wm.stack_simple.last())
+			C.XMoveResizeWindow(dpy, wm.stack_simple.last(), 0, 0, width, height)
+		}
+	}
+}
+
 fn main() {
 	mut wm := WinMan{}
 
@@ -228,6 +244,10 @@ fn main() {
 							wm.show_window()
 						}
 					}
+				}
+				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_R)
+					 && key.state ^ mod_super == 0 { // refocus if did not work auto (need to investigate)
+					wm.focus_stack_top()
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, screenshot_key.key)
 					&& key.state ^ screenshot_key.mod == 0 {
@@ -363,17 +383,7 @@ fn main() {
 						s_i := wm.stack_simple.index(win)
 						wm.stack_simple.delete(s_i)
 					}
-					if wm.double {
-						if wm.stack_double.len > 0 {
-							wm.i_double = wm.order_double.index(wm.stack_double.last())
-							C.XMoveResizeWindow(dpy, wm.stack_double.last(), double_x, double_y, double_w, double_h)
-						}
-					} else {
-						if wm.stack_simple.len > 0 {
-							wm.i_simple = wm.order_simple.index(wm.stack_simple.last())
-							C.XMoveResizeWindow(dpy, wm.stack_simple.last(), 0, 0, width, height)
-						}
-					}
+					wm.focus_stack_top()
 				}
 			}
 			else {}
@@ -381,3 +391,4 @@ fn main() {
 	}
 	C.XSetErrorHandler(unsafe { nil })
 }
+
