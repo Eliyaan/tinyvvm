@@ -16,7 +16,7 @@ The essential code that you will modify if you want to is in `tinyvvm.v` (only ~
 
 ## Installation
 
-Clone the project with git. Then compile it by running `v .` in the project's directory (or `v -prod .` to create an optimized executable). Go to a tty (by disabling your autostarting window manager) and then run: `startx ~/...path to the project's directory.../tinyvvm`.
+Clone the project with git. Then compile it by running `v .` in the project's directory (or `v -prod -autofree .` to create an optimized executable). Go to a tty (by disabling your autostarting window manager) and then run: `startx ~/...path to the project's directory.../tinyvvm`.
 
 ## Keybinds 
 
