@@ -16,11 +16,14 @@ The essential code that you will modify if you want to is in `tinyvvm.v` (only ~
 
 ## Installation
 
-Clone the project with git. Then compile it by running `v .` in the project's directory (or `v -prod -autofree .` to create an optimized executable). Go to a tty (by disabling your autostarting window manager) and then run: `startx ~/...path to the project's directory.../tinyvvm`.
+- Clone the project with git. 
+- Then compile it by running `v .` in the project's directory (or `v -prod -autofree .` to create an optimized executable).
+- Disabling your autostarting window manager if needed (on gnome fedora I think I used :`systemctl disable gdm.service` ), and quit it (by rebooting if you dont know another way)
+- Run in the terminal after booting is finished : `startx ~/...path to the project's directory.../tinyvvm`.
 
 ## Keybinds 
 
-The keybinds / commands associated to them are changeable in config.v (you need to recompile and relaunch the wm for the changes to take place).
+The keybinds / commands associated to them are changeable in `config.v` (you need to recompile and relaunch the wm for the changes to take place).
 
 - Super+Shift+E -> Quit the wm
 - Super+D -> Application launcher (rofi)
@@ -40,6 +43,7 @@ The keybinds / commands associated to them are changeable in config.v (you need 
 
 
 ¹the windows are associated with a number depending on the order they were spawned. First window: 0, second: 1 etc... 
+
 ²if you can reproduce a situation where it does not focus, please open an issue so we can keep track of it
 
 A big thanks to tinywm for showing how to do it: https://github.com/mackstann/tinywm
