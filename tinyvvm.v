@@ -187,17 +187,36 @@ fn main() {
 	grab_keys()
 
 	main_l: for {
-		time.sleep(30 * time.millisecond)
 		C.XNextEvent(dpy, &wm.ev)
 		match unsafe { wm.ev.@type } {
-			// C.ButtonPress {
-			//	C.XSetInputFocus(dpy, unsafe { wm.ev.xbutton.window }, C.RevertToPointerRoot,
-			//		C.CurrentTime)
-			//}
-			// C.ButtonRelease {
-			//	C.XSetInputFocus(dpy, unsafe { wm.ev.xbutton.window }, C.RevertToPointerRoot,
-			//		C.CurrentTime)
-			//}
+			C.ButtonPress {}
+			C.ButtonRelease {}
+			C.CirculateNotify {}
+			C.MotionNotify {}
+			C.EnterNotify {}
+			C.LeaveNotify {}
+			C.KeyRelease {}
+			C.FocusIn {}
+			C.FocusOut {}
+			C.KeymapNotify {}
+			C.Expose {}
+			C.GraphicsExpose {}
+			C.NoExpose {}
+			C.CirculateRequest {}
+			C.MapRequest {}
+			C.ResizeRequest {}
+			C.ConfigureNotify {}
+			C.DestroyNotify {}
+			C.GravityNotify {}
+			C.MappingNotify {}
+			C.ReparentNotify {}
+			C.VisibilityNotify {}
+			C.ColormapNotify {}
+			C.ClientMessage {}
+			C.PropertyNotify {}
+			C.SelectionClear {}
+			C.SelectionNotify {}
+			C.SelectionRequest {}
 			C.KeyPress {
 				key := unsafe { wm.ev.xkey }
 				if key.keycode == C.XKeysymToKeycode(dpy, terminal_key.key)
@@ -374,7 +393,7 @@ fn main() {
 					wm.show_window()
 				}
 			}
-			else {}
+			else {time.sleep(30 * time.millisecond)}
 		}
 	}
 	C.XSetErrorHandler(unsafe { nil })
