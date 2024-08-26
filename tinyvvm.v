@@ -109,7 +109,7 @@ fn (wm WinMan) close_window() {
 }
 
 fn (mut wm WinMan) show_window() {
-	if (wm.stack_simple.len > 0 && !wm.double) || (wm.stack_double.len > 0 && wm.double) {
+	if (!wm.double && wm.stack_simple.len > 0) || (wm.double && wm.stack_double.len > 0) {
 		win := if wm.double {
 			wm.stack_double.last()
 		} else {
@@ -118,8 +118,10 @@ fn (mut wm WinMan) show_window() {
 		C.XRaiseWindow(dpy, win)
 		C.XSetInputFocus(dpy, win, C.RevertToPointerRoot, C.CurrentTime)
 		if wm.double {
+			wm.i_double = wm.order_double.index(win)
 			C.XMoveResizeWindow(dpy, win, double_x, double_y, double_w, double_h)
 		} else {
+			wm.i_simple = wm.order_simple.index(win)
 			C.XMoveResizeWindow(dpy, win, 0, 0, width, height)
 		}
 	}
@@ -169,20 +171,6 @@ fn (mut wm WinMan) check_goto_window(nb_key int, key C.XKeyEvent) {
 			}
 		}
 		wm.show_window()
-	}
-}
-
-fn (mut wm WinMan) focus_stack_top() {
-	if wm.double {
-		if wm.stack_double.len > 0 {
-			wm.i_double = wm.order_double.index(wm.stack_double.last())
-			C.XMoveResizeWindow(dpy, wm.stack_double.last(), double_x, double_y, double_w, double_h)
-		}
-	} else {
-		if wm.stack_simple.len > 0 {
-			wm.i_simple = wm.order_simple.index(wm.stack_simple.last())
-			C.XMoveResizeWindow(dpy, wm.stack_simple.last(), 0, 0, width, height)
-		}
 	}
 }
 
@@ -247,7 +235,7 @@ fn main() {
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_R)
 					 && key.state ^ mod_super == 0 { // refocus if did not work auto (need to investigate)
-					wm.focus_stack_top()
+					wm.show_window()
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, screenshot_key.key)
 					&& key.state ^ screenshot_key.mod == 0 {
@@ -383,7 +371,7 @@ fn main() {
 						s_i := wm.stack_simple.index(win)
 						wm.stack_simple.delete(s_i)
 					}
-					wm.focus_stack_top()
+					wm.show_window()
 				}
 			}
 			else {}
