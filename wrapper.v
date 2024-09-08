@@ -52,9 +52,9 @@ struct C.XCreateWindowEvent {
 
 @[typedef]
 struct C.XDestroyWindowEvent {
-	@type      int        // DestroyNotify
-	serial     int        // # of last request processed by server
-	send_event bool       // true if this came from a SendEvent request
+	@type      int  // DestroyNotify
+	serial     int  // # of last request processed by server
+	send_event bool // true if this came from a SendEvent request
 	display    &C.Display = unsafe { nil } // Display the event was read from
 	event      C.Window
 	window     C.Window
@@ -62,9 +62,9 @@ struct C.XDestroyWindowEvent {
 
 @[typedef]
 struct C.XMapRequestEvent {
-	@type      int        // MapRequest
-	serial     u32        // # of last request processed by server
-	send_event bool       // true if this came from a SendEvent request
+	@type      int  // MapRequest
+	serial     u32  // # of last request processed by server
+	send_event bool // true if this came from a SendEvent request
 	display    &C.Display = unsafe { nil } // Display the event was read from
 	parent     C.Window
 	window     C.Window
@@ -83,9 +83,9 @@ struct C.XWindowChanges {
 
 @[typedef]
 struct C.XConfigureRequestEvent {
-	@type        int        // ConfigureRequest
-	serial       i64        // # of last request processed by server
-	send_event   bool       // true if this came from a SendEvent request
+	@type        int  // ConfigureRequest
+	serial       i64  // # of last request processed by server
+	send_event   bool // true if this came from a SendEvent request
 	display      &C.Display = unsafe { nil } // Display the event was read from
 	parent       C.Window
 	window       C.Window
@@ -101,9 +101,9 @@ struct C.XConfigureRequestEvent {
 
 @[typedef]
 struct C.XUnmapEvent {
-	@type          int        // UnmapNotify
-	serial         u32        // # of last request processed by server
-	send_event     bool       // true if this came from a SendEvent request
+	@type          int  // UnmapNotify
+	serial         u32  // # of last request processed by server
+	send_event     bool // true if this came from a SendEvent request
 	display        &C.Display = unsafe { nil } // Display the event was read from
 	event          C.Window
 	window         C.Window
@@ -128,9 +128,9 @@ fn C.XInternAtom(&C.Display, &u8, bool) C.Atom
 @[typedef]
 struct C.XClientMessageEvent {
 mut:
-	@type        int        // ClientMessage
-	serial       int        // # of last request processed by server
-	send_event   bool       // true if this came from a SendEvent request
+	@type        int  // ClientMessage
+	serial       int  // # of last request processed by server
+	send_event   bool // true if this came from a SendEvent request
 	display      &C.Display = unsafe { nil } // Display the event was read from
 	window       C.Window
 	message_type C.Atom
@@ -159,14 +159,14 @@ struct C.XKeyEvent {
 
 @[typedef]
 struct C.XButtonEvent {
-	@type       int        // ButtonPress or ButtonRelease
-	serial      u32        // # of last request processed by server
-	send_event  bool       // true if this came from a SendEvent request
+	@type       int  // ButtonPress or ButtonRelease
+	serial      u32  // # of last request processed by server
+	send_event  bool // true if this came from a SendEvent request
 	display     &C.Display = unsafe { nil } // Display the event was read from
-	window      C.Window   // ``event'' window it is reported relative to
-	root        C.Window   // root window that the event occurred on
-	subwindow   C.Window   // child window
-	time        C.Time     // milliseconds
+	window      C.Window // ``event'' window it is reported relative to
+	root        C.Window // root window that the event occurred on
+	subwindow   C.Window // child window
+	time        C.Time   // milliseconds
 	x           int
 	y           int // pointer x, y coordinates in event window
 	x_root      int

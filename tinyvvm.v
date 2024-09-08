@@ -12,15 +12,15 @@ const root = C.XDefaultRootWindow(dpy)
 
 struct WinMan {
 mut:
-	ev        C.XEvent
-	windows   []C.Window // usable with number keys
+	ev           C.XEvent
+	windows      []C.Window // usable with number keys
 	order_simple []C.Window // go through with H/L keys
-	order_double []C.Window 
-	i_simple   int
-	i_double   int
+	order_double []C.Window
+	i_simple     int
+	i_double     int
 	stack_simple []C.Window // on the first screen
 	stack_double []C.Window // second
-	double    bool
+	double       bool
 }
 
 fn grab_keys() {
@@ -74,7 +74,6 @@ fn grab_keys() {
 		true, C.GrabModeAsync, C.GrabModeAsync)
 }
 
-
 // Called when asking to close current window
 fn (wm WinMan) close_window() {
 	if wm.windows.len > 0 {
@@ -86,7 +85,7 @@ fn (wm WinMan) close_window() {
 				if wm.stack_double.len > 0 {
 					ke.xclient.window = wm.stack_double.last()
 				} else {
-					return // No window needs to be killed
+					return
 				}
 			} else {
 				if wm.stack_simple.len > 0 {
@@ -136,19 +135,19 @@ fn error_handler(display &C.Display, event &C.XErrorEvent) int {
 
 fn (mut wm WinMan) check_goto_window(nb_key int, key C.XKeyEvent) {
 	if key.keycode == C.XKeysymToKeycode(dpy, nb_key) && key.state ^ mod_super == 0 {
-		win := wm.windows[nb_key-0x31] or {return} // https://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h
+		win := wm.windows[nb_key - 0x31] or { return } // https://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h
 		if wm.double {
 			i := wm.order_double.index(win)
 			if i != -1 {
 				s_i := wm.stack_double.index(win)
-					wm.stack_double.delete(s_i)
+				wm.stack_double.delete(s_i)
 				wm.stack_double << win
 				wm.i_double = i
 			} else {
 				o_i := wm.order_simple.index(win)
-					wm.order_simple.delete(o_i)
+				wm.order_simple.delete(o_i)
 				s_i := wm.stack_simple.index(win)
-					wm.stack_simple.delete(s_i)
+				wm.stack_simple.delete(s_i)
 				wm.i_double = wm.order_double.len
 				wm.order_double << win
 				wm.stack_double << win
@@ -157,14 +156,14 @@ fn (mut wm WinMan) check_goto_window(nb_key int, key C.XKeyEvent) {
 			i := wm.order_simple.index(win)
 			if i != -1 {
 				s_i := wm.stack_simple.index(win)
-					wm.stack_simple.delete(s_i)
+				wm.stack_simple.delete(s_i)
 				wm.stack_simple << win
 				wm.i_double = i
 			} else {
 				o_i := wm.order_double.index(win)
-					wm.order_double.delete(o_i)
+				wm.order_double.delete(o_i)
 				s_i := wm.stack_double.index(win)
-					wm.stack_double.delete(s_i)
+				wm.stack_double.delete(s_i)
 				wm.i_simple = wm.order_simple.len
 				wm.order_simple << win
 				wm.stack_simple << win
@@ -220,19 +219,18 @@ fn main() {
 			C.KeyPress {
 				key := unsafe { wm.ev.xkey }
 				if key.keycode == C.XKeysymToKeycode(dpy, terminal_key.key)
-					&& key.state ^ terminal_key.mod == 0 {
+					&& key.state == terminal_key.mod {
 					spawn os.execute(terminal_name)
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, close_key.key)
-					&& key.state ^ close_key.mod == 0 {
+					&& key.state == close_key.mod {
 					wm.close_window()
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, wm_quit_key.key)
-					&& key.state ^ wm_quit_key.mod == 0 {
+					&& key.state == wm_quit_key.mod {
 					break
 				}
-				if key.keycode == C.XKeysymToKeycode(dpy, wifi_key.key)
-					&& key.state ^ wifi_key.mod == 0 {
+				if key.keycode == C.XKeysymToKeycode(dpy, wifi_key.key) && key.state == wifi_key.mod {
 					if os.execute('nmcli r wifi').output.contains('enabled') {
 						spawn os.execute(wifi_name + ' off')
 					} else {
@@ -240,7 +238,7 @@ fn main() {
 					}
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, desktop_key.key)
-					&& key.state ^ desktop_key.mod == 0 {
+					&& key.state == desktop_key.mod {
 					wm.double = !wm.double // change of screen
 					if wm.double {
 						if wm.order_double.len > 0 {
@@ -252,43 +250,42 @@ fn main() {
 						}
 					}
 				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_R)
-					 && key.state ^ mod_super == 0 { // refocus if did not work auto (need to investigate)
+				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_R) && key.state == mod_super { // refocus if did not work auto (need to investigate)
 					wm.show_window()
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, screenshot_key.key)
-					&& key.state ^ screenshot_key.mod == 0 {
+					&& key.state == screenshot_key.mod {
 					spawn os.execute(screenshot_name)
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, launch_app_key.key)
-					&& key.state ^ launch_app_key.mod == 0 {
+					&& key.state == launch_app_key.mod {
 					spawn os.execute(launch_app_name)
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, sound_up_key.key)
-					&& key.state ^ sound_up_key.mod == 0 {
+					&& key.state == sound_up_key.mod {
 					spawn os.execute(sound_up_name)
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, sound_down_key.key)
-					&& key.state ^ sound_down_key.mod == 0 {
+					&& key.state == sound_down_key.mod {
 					spawn os.execute(sound_down_name)
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, bright_up_key.key)
-					&& key.state ^ bright_up_key.mod == 0 {
+					&& key.state == bright_up_key.mod {
 					spawn os.execute(bright_up_name)
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, bright_down_key.key)
-					&& key.state ^ bright_down_key.mod == 0 {
+					&& key.state == bright_down_key.mod {
 					spawn os.execute(bright_down_name)
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, bluetooth_key.key)
-					&& key.state ^ bluetooth_key.mod == 0 {
+					&& key.state == bluetooth_key.mod {
 					if os.execute("bluetoothctl show | awk 'NR==7 {printf $2}'").output.contains('no') {
 						spawn os.execute(bluetooth_name + ' on')
 					} else {
 						spawn os.execute(bluetooth_name + ' off')
 					}
 				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_L) && key.state ^ mod_super == 0 {
+				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_L) && key.state == mod_super {
 					if wm.double {
 						if wm.order_double.len > 0 {
 							wm.i_double += 1
@@ -297,7 +294,7 @@ fn main() {
 							}
 							win := wm.order_double[wm.i_double]
 							s_i := wm.stack_double.index(win)
-								wm.stack_double.delete(s_i)
+							wm.stack_double.delete(s_i)
 							wm.stack_double << win
 						} else {
 							continue main_l
@@ -310,7 +307,7 @@ fn main() {
 							}
 							win := wm.order_simple[wm.i_simple]
 							s_i := wm.stack_simple.index(win)
-								wm.stack_simple.delete(s_i)
+							wm.stack_simple.delete(s_i)
 							wm.stack_simple << win
 						} else {
 							continue main_l
@@ -318,7 +315,7 @@ fn main() {
 					}
 					wm.show_window()
 				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_H) && key.state ^ mod_super == 0 {
+				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_H) && key.state == mod_super {
 					if wm.double {
 						if wm.order_double.len > 0 {
 							wm.i_double -= 1
@@ -327,7 +324,7 @@ fn main() {
 							}
 							win := wm.order_double[wm.i_double]
 							s_i := wm.stack_double.index(win)
-								wm.stack_double.delete(s_i)
+							wm.stack_double.delete(s_i)
 							wm.stack_double << win
 						} else {
 							continue main_l
@@ -340,7 +337,7 @@ fn main() {
 							}
 							win := wm.order_simple[wm.i_simple]
 							s_i := wm.stack_simple.index(win)
-								wm.stack_simple.delete(s_i)
+							wm.stack_simple.delete(s_i)
 							wm.stack_simple << win
 						} else {
 							continue main_l
@@ -365,7 +362,7 @@ fn main() {
 					if wm.double {
 						wm.stack_double << wm.windows.last()
 						wm.order_double << wm.windows.last()
-						wm.i_double = wm.order_double.len -1
+						wm.i_double = wm.order_double.len - 1
 					} else {
 						wm.stack_simple << wm.windows.last()
 						wm.order_simple << wm.windows.last()
@@ -375,7 +372,7 @@ fn main() {
 				}
 			}
 			C.UnmapNotify {
-				win := unsafe{wm.ev.xunmap.window}
+				win := unsafe { wm.ev.xunmap.window }
 				unmapped_i := wm.windows.index(win)
 				if unmapped_i != -1 {
 					wm.windows.delete(unmapped_i)
@@ -393,9 +390,10 @@ fn main() {
 					wm.show_window()
 				}
 			}
-			else {time.sleep(30 * time.millisecond)}
+			else {
+				time.sleep(30 * time.millisecond)
+			}
 		}
 	}
 	C.XSetErrorHandler(unsafe { nil })
 }
-
