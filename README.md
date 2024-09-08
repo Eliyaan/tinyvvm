@@ -18,8 +18,10 @@ The essential code that you will modify if you want to is in `tinyvvm.v` (only ~
 
 - Clone the project with git. 
 - Then compile it by running `v .` in the project's directory (or `v -prod -autofree .` to create an optimized executable).
-- Add tinyvvm to the desktops list³
-- Or Disabling your autostarting desktop manager if needed (on gnome fedora I think I used :`systemctl disable gdm.service` ), and quit it (by rebooting if you dont know another way)
+- Add tinyvvm to the desktops list³ and then logout and chose tinyvvm
+
+Or: (replacing the last step)
+- Disabling your autostarting desktop manager if needed (on gnome fedora I think I used :`systemctl disable gdm.service` ), and quit it (by rebooting if you dont know another way)
 - Run in the terminal after booting is finished : `startx ~/...path to the project's directory.../tinyvvm`.
 
 ## Keybinds 
