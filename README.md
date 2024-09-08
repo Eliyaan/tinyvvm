@@ -18,7 +18,8 @@ The essential code that you will modify if you want to is in `tinyvvm.v` (only ~
 
 - Clone the project with git. 
 - Then compile it by running `v .` in the project's directory (or `v -prod -autofree .` to create an optimized executable).
-- Disabling your autostarting window manager if needed (on gnome fedora I think I used :`systemctl disable gdm.service` ), and quit it (by rebooting if you dont know another way)
+- Add tinyvvm to the desktops list³
+- Or Disabling your autostarting desktop manager if needed (on gnome fedora I think I used :`systemctl disable gdm.service` ), and quit it (by rebooting if you dont know another way)
 - Run in the terminal after booting is finished : `startx ~/...path to the project's directory.../tinyvvm`.
 
 ## Keybinds 
@@ -45,5 +46,14 @@ The keybinds / commands associated to them are changeable in `config.v` (you nee
 ¹the windows are associated with a number depending on the order they were spawned. First window: 0, second: 1 etc... 
 
 ²if you can reproduce a situation where it does not focus, please open an issue so we can keep track of it
+
+³ add `tinyvvm.desktop` in `/usr/share/xsessions/` with this inside:
+```
+[Desktop Entry]
+Name=Tinyvvm
+Comment=Start a Tinyvvm session
+Exec=[path to the tinyvvm executable]
+Type=Application
+```
 
 A big thanks to tinywm for showing how to do it: https://github.com/mackstann/tinywm
