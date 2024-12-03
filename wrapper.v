@@ -1,7 +1,3 @@
-#include <X11/Xlib.h>
-#include <X11/keysym.h>
-#flag -lX11
-
 fn C.XSetInputFocus(&C.Display, C.Window, Revert, C.Time)
 
 struct C.XSizeHints {}

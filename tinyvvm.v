@@ -1,5 +1,9 @@
 import os
 import time
+#include <X11/Xlib.h>
+#include <X11/keysym.h>
+#flag -lX11
+
 
 const mod_super = C.Mod4Mask
 const mod_shift = C.ShiftMask
@@ -23,24 +27,13 @@ mut:
 	double       bool
 }
 
-struct ChangeDesktop {
-	keysym  KeySym
-	desktop int
-}
-
 struct KeyMod {
 	key KeySym
 	mod int // u int
 }
 
-struct KeyMap {
-	keymod &KeyMod
-	cmd    string
-}
-
-type KeySym = int
-
 type KeyCode = u8
+type KeySym = int
 
 fn grab_keys() {
 	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, desktop_key.key), desktop_key.mod, root, true,
