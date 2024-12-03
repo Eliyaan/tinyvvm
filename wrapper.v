@@ -296,20 +296,6 @@ type C.Window = u64
 
 struct C.Screen {}
 
-struct KeyMod {
-	key KeySym
-	mod int // u int
-}
-
-struct KeyMap {
-	keymod &KeyMod
-	cmd    string
-}
-
-type KeySym = int
-
-type KeyCode = u8
-
 struct C.XftFont {}
 
 @[typedef]
@@ -319,10 +305,6 @@ struct C.XftDraw {}
 
 type C.Cursor = int
 
-struct ChangeDesktop {
-	keysym  KeySym
-	desktop int
-}
 
 fn C.XFree(&u8)
 

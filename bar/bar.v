@@ -20,8 +20,8 @@ fn disk_get() string {
 }
 
 fn audio_get() string {
-	amixer := os.execute('amixer get Master').output
-	return amixer[amixer.index('[') or { 0 } + 1..amixer.index(']') or { 0 }]
+	amixer := os.execute('pamixer --get-volume').output
+	return amixer#[..-1]
 }
 
 fn wifi_get() string {

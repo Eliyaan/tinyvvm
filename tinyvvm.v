@@ -23,6 +23,25 @@ mut:
 	double       bool
 }
 
+struct ChangeDesktop {
+	keysym  KeySym
+	desktop int
+}
+
+struct KeyMod {
+	key KeySym
+	mod int // u int
+}
+
+struct KeyMap {
+	keymod &KeyMod
+	cmd    string
+}
+
+type KeySym = int
+
+type KeyCode = u8
+
 fn grab_keys() {
 	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, desktop_key.key), desktop_key.mod, root, true,
 		C.GrabModeAsync, C.GrabModeAsync)
