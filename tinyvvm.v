@@ -1,41 +1,51 @@
 import os
 import time
+
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #flag -lX11
 
 
+// TODO replace simple and double by first and sec
+
+
+
+// Masks used by X
 const mod_super = C.Mod4Mask
 const mod_shift = C.ShiftMask
 
-// Get them automatically for the current window
+// Catch these events
 const catched_events = i32(C.SubstructureNotifyMask | C.StructureNotifyMask | C.KeyPressMask | C.KeyReleaseMask | C.ButtonPressMask | C.ButtonReleaseMask)
 
+// Provides a root window and a display, as we dont need to change them, needed in a lot of functions calls
 const dpy = C.XOpenDisplay(unsafe { nil })
 const root = C.XDefaultRootWindow(dpy)
 
 struct WinMan {
 mut:
 	ev           C.XEvent
-	windows      []C.Window // usable with number keys
-	order_simple []C.Window // go through with H/L keys
-	order_double []C.Window
-	i_simple     int
-	i_double     int
-	stack_simple []C.Window // on the first screen
-	stack_double []C.Window // second
-	double       bool
+	windows      []C.Window // All the opened windows, the number keys 1-9 correspond to (the index + 1) of a window in this array
+	order_simple []C.Window // First screen: go through with H/L keys, "sorted" in order of arrival
+	order_double []C.Window // Second screen: go through with H/L keys, "sorted" in order of arrival
+	i_simple     int        // index (first screen) of the current window in order_simple (used for H/L keys)
+	i_double     int        // index (second screen) of the current window in order_simple (used for H/L keys)
+	stack_simple []C.Window // stack of windows on the first screen (the last (top of the stack) will be brought forward if you close the current window)
+	stack_double []C.Window // same for the second screen
+	double       bool       // Is the double screen selected (or the first)
 }
 
+// Describes a keyboard shorcut : a key and a modifier, example: Super + T
 struct KeyMod {
 	key KeySym
-	mod int // u int
+	mod int
 }
 
+// TODO
 type KeyCode = u8
 type KeySym = int
 
 fn grab_keys() {
+	// Grab all the keyboard shortcuts used by the window manager, no one will be able to get these shortcuts (as far as I know)
 	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, desktop_key.key), desktop_key.mod, root, true,
 		C.GrabModeAsync, C.GrabModeAsync)
 	C.XGrabKey(dpy, C.XKeysymToKeycode(dpy, launch_app_key.key), launch_app_key.mod, root,
@@ -86,18 +96,20 @@ fn grab_keys() {
 		true, C.GrabModeAsync, C.GrabModeAsync)
 }
 
-// Called when asking to close current window
+// Called when asked to close current window
 fn (wm WinMan) close_window() {
 	if wm.windows.len > 0 {
+		// We send an event to the X server (or the concerned app directly) that will ask to kill a specific window
 		mut ke := C.XEvent{
 			@type: C.ClientMessage
 		}
 		unsafe {
+			// We take the last window of the selected stack as it is the one the user is currently using (so the user is asking to close this one)
 			if wm.double {
 				if wm.stack_double.len > 0 {
 					ke.xclient.window = wm.stack_double.last()
-				} else {
-					return
+				} else { 
+					return // if there is no window to kill 
 				}
 			} else {
 				if wm.stack_simple.len > 0 {
@@ -106,31 +118,34 @@ fn (wm WinMan) close_window() {
 					return
 				}
 			}
+			// Tells X to kill this window (irrc X will ask the app to close itself, but some apps (example:steam) will just run in the background with no window)
 			ke.xclient.message_type = C.XInternAtom(dpy, c'WM_PROTOCOLS', true)
 			ke.xclient.format = 32
 			ke.xclient.data.l[0] = C.XInternAtom(dpy, c'WM_DELETE_WINDOW', true)
 			ke.xclient.data.l[1] = C.CurrentTime
 		}
+		// Send the request
 		if wm.double {
-			C.XSendEvent(dpy, wm.stack_double.last(), false, C.NoEventMask, &ke)
+			C.XSendEvent(dpy, wm.stack_double.last(), false, C.NoEventMask, &ke) // we send the event to the good window https://tronche.com/gui/x/xlib/event-handling/XSendEvent.html
 		} else {
 			C.XSendEvent(dpy, wm.stack_simple.last(), false, C.NoEventMask, &ke)
 		}
 	}
 }
 
+// Raise and select/focus the current window
 fn (mut wm WinMan) show_window() {
-	if (!wm.double && wm.stack_simple.len > 0) || (wm.double && wm.stack_double.len > 0) {
-		win := if wm.double {
+	if (!wm.double && wm.stack_simple.len > 0) || (wm.double && wm.stack_double.len > 0) { // if there is a window
+		win := if wm.double { // find which one is the current one
 			wm.stack_double.last()
 		} else {
 			wm.stack_simple.last()
 		}
-		C.XRaiseWindow(dpy, win)
-		C.XSetInputFocus(dpy, win, C.RevertToPointerRoot, C.CurrentTime)
+		C.XRaiseWindow(dpy, win) // raise this window above all other windows
+		C.XSetInputFocus(dpy, win, C.RevertToPointerRoot, C.CurrentTime) // The keyboard inputs will be caught by this app (the text editing cursor will work)
 		if wm.double {
-			wm.i_double = wm.order_double.index(win)
-			C.XMoveResizeWindow(dpy, win, double_x, double_y, double_w, double_h)
+			wm.i_double = wm.order_double.index(win) // remember that we are on this window (useful to circle through windows with H/L keys)
+			C.XMoveResizeWindow(dpy, win, double_x, double_y, double_w, double_h) // resize the window to the full screen (expected) size and the right position (top left corner of the screen)
 		} else {
 			wm.i_simple = wm.order_simple.index(win)
 			C.XMoveResizeWindow(dpy, win, 0, 0, width, height)
@@ -138,6 +153,7 @@ fn (mut wm WinMan) show_window() {
 	}
 }
 
+// avoid crashes as X will redirect errors here instead of shutting down
 fn error_handler(display &C.Display, event &C.XErrorEvent) int {
 	error_message := []u8{len: 256}
 	C.XGetErrorText(display, event.error_code, error_message.data, error_message.len)
@@ -145,39 +161,47 @@ fn error_handler(display &C.Display, event &C.XErrorEvent) int {
 	return 0
 }
 
+// Checks if user asks to go to the window at the index nb_key (in the windows array) and if yes show it
+// Useful to move windows from one screen to another
 fn (mut wm WinMan) check_goto_window(nb_key int, key C.XKeyEvent) {
-	if key.keycode == C.XKeysymToKeycode(dpy, nb_key) && key.state ^ mod_super == 0 {
-		win := wm.windows[nb_key - 0x31] or { return } // https://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h
+	if key.keycode == C.XKeysymToKeycode(dpy, nb_key) && key.state ^ mod_super == 0 { // if Super + nb_key
+		win := wm.windows[nb_key - 0x31] or { return } // https://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h get the good window
 		if wm.double {
 			i := wm.order_double.index(win)
-			if i != -1 {
-				s_i := wm.stack_double.index(win)
+			if i != -1 { // it is on the double screen
+				// Move it on the top of the stack
+				s_i := wm.stack_double.index(win) 
 				wm.stack_double.delete(s_i)
 				wm.stack_double << win
-				wm.i_double = i
-			} else {
+				wm.i_double = i // we are on the window i in the order_double array
+			} else { // it's on the simple screen
+				// transfer the window to the simple screen
 				o_i := wm.order_simple.index(win)
 				wm.order_simple.delete(o_i)
+				wm.order_double << win
+				wm.i_double = wm.order_double.len - 1
+				// move it on the top of the stack
 				s_i := wm.stack_simple.index(win)
 				wm.stack_simple.delete(s_i)
-				wm.i_double = wm.order_double.len
-				wm.order_double << win
 				wm.stack_double << win
 			}
 		} else {
 			i := wm.order_simple.index(win)
-			if i != -1 {
+			if i != -1 { // it is on the simple screen
+				// Move it on the top of the stack
 				s_i := wm.stack_simple.index(win)
 				wm.stack_simple.delete(s_i)
 				wm.stack_simple << win
 				wm.i_double = i
-			} else {
+			} else { // it is on the double screen
+				// transfer the window to the simple screen
 				o_i := wm.order_double.index(win)
 				wm.order_double.delete(o_i)
+				wm.order_simple << win
+				wm.i_simple = wm.order_simple.len
+				// move it on the top of the stack
 				s_i := wm.stack_double.index(win)
 				wm.stack_double.delete(s_i)
-				wm.i_simple = wm.order_simple.len
-				wm.order_simple << win
 				wm.stack_simple << win
 			}
 		}
@@ -188,9 +212,11 @@ fn (mut wm WinMan) check_goto_window(nb_key int, key C.XKeyEvent) {
 fn main() {
 	mut wm := WinMan{}
 
+	// Set the error handler
 	C.XSetErrorHandler(error_handler)
 
-	attr := C.XSetWindowAttributes{
+	// say to X which event we want to get notified about
+	attr := C.XSetWindowAttributes{ 
 		event_mask: catched_events
 	}
 	C.XChangeWindowAttributes(dpy, C.XDefaultRootWindow(dpy), C.CWEventMask, &attr)

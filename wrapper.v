@@ -301,7 +301,6 @@ struct C.XftDraw {}
 
 type C.Cursor = int
 
-
 fn C.XFree(&u8)
 
 @[typedef]

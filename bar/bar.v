@@ -9,7 +9,7 @@ fn main() {
 	brightness := bright_get()
 	battery := bat_get()
 	bluetooth := blue_get()
-	println('\U0001F50A ${audio} | \U0001F4BE ${disk} | 🌐 ${wifi} ${network} | Mem: ${memory} | ⏾ ${brightness} | \U0001F50B ${battery} | \uF293 ${bluetooth}') // use unicode
+	println('\U0001F50A ${audio} | disk ${disk} | \U0001F6DC🌐${wifi} ${network} | Mem: ${memory} | ⏾ ${brightness} | bat ${battery} | \uF293 ${bluetooth}') // use unicode
 }
 
 fn disk_get() string {
