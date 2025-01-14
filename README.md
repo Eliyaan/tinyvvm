@@ -14,6 +14,8 @@ So this project is here to help anyone who :
 
 The essential code that you will modify if you want to is in `tinyvvm.v` (only ~400LoC).
 
+If you make your own window manager, please tell me, so that I can add a link here to encourage more people to do their own wms!
+
 ## Installation
 
 - Clone the project with git. 
