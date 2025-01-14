@@ -23,7 +23,7 @@ const bright_down_name = 'brightnessctl set 1000-'
 // Constants to manage the size of the different screens
 const width = 1366
 const height = 768
-const double_x = 1366
-const double_y = 0
-const double_w = 1920
-const double_h = 1080
+const sec_x = 1366
+const sec_y = 0
+const sec_w = 1920
+const sec_h = 1080

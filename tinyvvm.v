@@ -5,12 +5,7 @@ import time
 #include <X11/keysym.h>
 #flag -lX11
 
-
-// TODO replace simple and double by first and sec
-
-
-
-// Masks used by X
+// Masks used by X11
 const mod_super = C.Mod4Mask
 const mod_shift = C.ShiftMask
 
@@ -23,15 +18,15 @@ const root = C.XDefaultRootWindow(dpy)
 
 struct WinMan {
 mut:
-	ev           C.XEvent
-	windows      []C.Window // All the opened windows, the number keys 1-9 correspond to (the index + 1) of a window in this array
-	order_simple []C.Window // First screen: go through with H/L keys, "sorted" in order of arrival
-	order_double []C.Window // Second screen: go through with H/L keys, "sorted" in order of arrival
-	i_simple     int        // index (first screen) of the current window in order_simple (used for H/L keys)
-	i_double     int        // index (second screen) of the current window in order_simple (used for H/L keys)
-	stack_simple []C.Window // stack of windows on the first screen (the last (top of the stack) will be brought forward if you close the current window)
-	stack_double []C.Window // same for the second screen
-	double       bool       // Is the double screen selected (or the first)
+	ev          C.XEvent
+	windows     []C.Window // All the opened windows, the number keys 1-9 correspond to (the index + 1) of a window in this array
+	order_first []C.Window // First screen: go through with H/L keys, "sorted" in order of arrival
+	order_sec   []C.Window // Second screen: go through with H/L keys, "sorted" in order of arrival
+	i_first     int        // index (first screen) of the current window in order_first (used for H/L keys)
+	i_sec       int        // index (second screen) of the current window in order_first (used for H/L keys)
+	stack_first []C.Window // stack of windows on the first screen (the last (top of the stack) will be brought forward if you close the current window)
+	stack_sec   []C.Window // same for the second screen
+	sec         bool       // Is the sec screen selected (or the first)
 }
 
 // Describes a keyboard shorcut : a key and a modifier, example: Super + T
@@ -105,15 +100,15 @@ fn (wm WinMan) close_window() {
 		}
 		unsafe {
 			// We take the last window of the selected stack as it is the one the user is currently using (so the user is asking to close this one)
-			if wm.double {
-				if wm.stack_double.len > 0 {
-					ke.xclient.window = wm.stack_double.last()
-				} else { 
-					return // if there is no window to kill 
+			if wm.sec {
+				if wm.stack_sec.len > 0 {
+					ke.xclient.window = wm.stack_sec.last()
+				} else {
+					return
 				}
 			} else {
-				if wm.stack_simple.len > 0 {
-					ke.xclient.window = wm.stack_simple.last()
+				if wm.stack_first.len > 0 {
+					ke.xclient.window = wm.stack_first.last()
 				} else {
 					return
 				}
@@ -125,29 +120,29 @@ fn (wm WinMan) close_window() {
 			ke.xclient.data.l[1] = C.CurrentTime
 		}
 		// Send the request
-		if wm.double {
-			C.XSendEvent(dpy, wm.stack_double.last(), false, C.NoEventMask, &ke) // we send the event to the good window https://tronche.com/gui/x/xlib/event-handling/XSendEvent.html
+		if wm.sec {
+			C.XSendEvent(dpy, wm.stack_sec.last(), false, C.NoEventMask, &ke) // we send the event to the good window https://tronche.com/gui/x/xlib/event-handling/XSendEvent.html
 		} else {
-			C.XSendEvent(dpy, wm.stack_simple.last(), false, C.NoEventMask, &ke)
+			C.XSendEvent(dpy, wm.stack_first.last(), false, C.NoEventMask, &ke)
 		}
 	}
 }
 
 // Raise and select/focus the current window
 fn (mut wm WinMan) show_window() {
-	if (!wm.double && wm.stack_simple.len > 0) || (wm.double && wm.stack_double.len > 0) { // if there is a window
-		win := if wm.double { // find which one is the current one
-			wm.stack_double.last()
+	if (!wm.sec && wm.stack_first.len > 0) || (wm.sec && wm.stack_sec.len > 0) { // if there is a window
+		win := if wm.sec { // find which one is the current one
+			wm.stack_sec.last()
 		} else {
-			wm.stack_simple.last()
+			wm.stack_first.last()
 		}
 		C.XRaiseWindow(dpy, win) // raise this window above all other windows
 		C.XSetInputFocus(dpy, win, C.RevertToPointerRoot, C.CurrentTime) // The keyboard inputs will be caught by this app (the text editing cursor will work)
-		if wm.double {
-			wm.i_double = wm.order_double.index(win) // remember that we are on this window (useful to circle through windows with H/L keys)
-			C.XMoveResizeWindow(dpy, win, double_x, double_y, double_w, double_h) // resize the window to the full screen (expected) size and the right position (top left corner of the screen)
+		if wm.sec {
+			wm.i_sec = wm.order_sec.index(win) // remember that we are on this window (useful to circle through windows with H/L keys)
+			C.XMoveResizeWindow(dpy, win, sec_x, sec_y, sec_w, sec_h) // resize the window to the full screen (expected) size and the right position (top left corner of the screen)
 		} else {
-			wm.i_simple = wm.order_simple.index(win)
+			wm.i_first = wm.order_first.index(win)
 			C.XMoveResizeWindow(dpy, win, 0, 0, width, height)
 		}
 	}
@@ -166,43 +161,43 @@ fn error_handler(display &C.Display, event &C.XErrorEvent) int {
 fn (mut wm WinMan) check_goto_window(nb_key int, key C.XKeyEvent) {
 	if key.keycode == C.XKeysymToKeycode(dpy, nb_key) && key.state ^ mod_super == 0 { // if Super + nb_key
 		win := wm.windows[nb_key - 0x31] or { return } // https://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h get the good window
-		if wm.double {
-			i := wm.order_double.index(win)
-			if i != -1 { // it is on the double screen
+		if wm.sec {
+			i := wm.order_sec.index(win)
+			if i != -1 { // it is on the sec screen
 				// Move it on the top of the stack
-				s_i := wm.stack_double.index(win) 
-				wm.stack_double.delete(s_i)
-				wm.stack_double << win
-				wm.i_double = i // we are on the window i in the order_double array
-			} else { // it's on the simple screen
-				// transfer the window to the simple screen
-				o_i := wm.order_simple.index(win)
-				wm.order_simple.delete(o_i)
-				wm.order_double << win
-				wm.i_double = wm.order_double.len - 1
+				s_i := wm.stack_sec.index(win)
+				wm.stack_sec.delete(s_i)
+				wm.stack_sec << win
+				wm.i_sec = i // we are on the window i in the order_sec array
+			} else { // it's on the first screen
+				// transfer the window to the first screen
+				o_i := wm.order_first.index(win)
+				wm.order_first.delete(o_i)
+				wm.order_sec << win
+				wm.i_sec = wm.order_sec.len - 1
 				// move it on the top of the stack
-				s_i := wm.stack_simple.index(win)
-				wm.stack_simple.delete(s_i)
-				wm.stack_double << win
+				s_i := wm.stack_first.index(win)
+				wm.stack_first.delete(s_i)
+				wm.stack_sec << win
 			}
 		} else {
-			i := wm.order_simple.index(win)
-			if i != -1 { // it is on the simple screen
+			i := wm.order_first.index(win)
+			if i != -1 { // it is on the first screen
 				// Move it on the top of the stack
-				s_i := wm.stack_simple.index(win)
-				wm.stack_simple.delete(s_i)
-				wm.stack_simple << win
-				wm.i_double = i
-			} else { // it is on the double screen
-				// transfer the window to the simple screen
-				o_i := wm.order_double.index(win)
-				wm.order_double.delete(o_i)
-				wm.order_simple << win
-				wm.i_simple = wm.order_simple.len
+				s_i := wm.stack_first.index(win)
+				wm.stack_first.delete(s_i)
+				wm.stack_first << win
+				wm.i_sec = i
+			} else { // it is on the sec screen
+				// transfer the window to the first screen
+				o_i := wm.order_sec.index(win)
+				wm.order_sec.delete(o_i)
+				wm.order_first << win
+				wm.i_first = wm.order_first.len
 				// move it on the top of the stack
-				s_i := wm.stack_double.index(win)
-				wm.stack_double.delete(s_i)
-				wm.stack_simple << win
+				s_i := wm.stack_sec.index(win)
+				wm.stack_sec.delete(s_i)
+				wm.stack_first << win
 			}
 		}
 		wm.show_window()
@@ -216,7 +211,7 @@ fn main() {
 	C.XSetErrorHandler(error_handler)
 
 	// say to X which event we want to get notified about
-	attr := C.XSetWindowAttributes{ 
+	attr := C.XSetWindowAttributes{
 		event_mask: catched_events
 	}
 	C.XChangeWindowAttributes(dpy, C.XDefaultRootWindow(dpy), C.CWEventMask, &attr)
@@ -277,18 +272,18 @@ fn main() {
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, desktop_key.key)
 					&& key.state == desktop_key.mod {
-					wm.double = !wm.double // change of screen
-					if wm.double {
-						if wm.order_double.len > 0 {
+					wm.sec = !wm.sec // change of screen
+					if wm.sec {
+						if wm.order_sec.len > 0 {
 							wm.show_window()
 						}
 					} else {
-						if wm.order_simple.len > 0 {
+						if wm.order_first.len > 0 {
 							wm.show_window()
 						}
 					}
 				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_R) && key.state == mod_super { // refocus if did not work auto (need to investigate)
+				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_R) && key.state == mod_super { // refocus
 					wm.show_window()
 				}
 				if key.keycode == C.XKeysymToKeycode(dpy, screenshot_key.key)
@@ -323,60 +318,64 @@ fn main() {
 						spawn os.execute(bluetooth_name + ' off')
 					}
 				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_L) && key.state == mod_super {
-					if wm.double {
-						if wm.order_double.len > 0 {
-							wm.i_double += 1
-							if wm.i_double >= wm.order_double.len {
-								wm.i_double = 0
+				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_L) && key.state == mod_super { // cycle forward
+					if wm.sec {
+						if wm.order_sec.len > 0 {
+							wm.i_sec += 1
+							if wm.i_sec >= wm.order_sec.len {
+								wm.i_sec = 0 // cycle
 							}
-							win := wm.order_double[wm.i_double]
-							s_i := wm.stack_double.index(win)
-							wm.stack_double.delete(s_i)
-							wm.stack_double << win
+							win := wm.order_sec[wm.i_sec]
+							// put it on top of the stack
+							s_i := wm.stack_sec.index(win)
+							wm.stack_sec.delete(s_i)
+							wm.stack_sec << win
 						} else {
-							continue main_l
+							continue main_l // if there is no window
 						}
 					} else {
-						if wm.order_simple.len > 0 {
-							wm.i_simple += 1
-							if wm.i_simple >= wm.order_simple.len {
-								wm.i_simple = 0
+						if wm.order_first.len > 0 {
+							wm.i_first += 1
+							if wm.i_first >= wm.order_first.len {
+								wm.i_first = 0 // cycle
 							}
-							win := wm.order_simple[wm.i_simple]
-							s_i := wm.stack_simple.index(win)
-							wm.stack_simple.delete(s_i)
-							wm.stack_simple << win
+							win := wm.order_first[wm.i_first]
+							// put it on top of the stack
+							s_i := wm.stack_first.index(win)
+							wm.stack_first.delete(s_i)
+							wm.stack_first << win
 						} else {
-							continue main_l
+							continue main_l // if there is no window
 						}
 					}
 					wm.show_window()
 				}
-				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_H) && key.state == mod_super {
-					if wm.double {
-						if wm.order_double.len > 0 {
-							wm.i_double -= 1
-							if wm.i_double < 0 {
-								wm.i_double = wm.order_double.len - 1
+				if key.keycode == C.XKeysymToKeycode(dpy, C.XK_H) && key.state == mod_super { // cycle backward
+					if wm.sec {
+						if wm.order_sec.len > 0 {
+							wm.i_sec -= 1
+							if wm.i_sec < 0 {
+								wm.i_sec = wm.order_sec.len - 1 // cycle
 							}
-							win := wm.order_double[wm.i_double]
-							s_i := wm.stack_double.index(win)
-							wm.stack_double.delete(s_i)
-							wm.stack_double << win
+							win := wm.order_sec[wm.i_sec]
+							// put it on top of the stack
+							s_i := wm.stack_sec.index(win)
+							wm.stack_sec.delete(s_i)
+							wm.stack_sec << win
 						} else {
 							continue main_l
 						}
 					} else {
-						if wm.order_simple.len > 0 {
-							wm.i_simple -= 1
-							if wm.i_simple < 0 {
-								wm.i_simple = wm.order_simple.len - 1
+						if wm.order_first.len > 0 {
+							wm.i_first -= 1
+							if wm.i_first < 0 {
+								wm.i_first = wm.order_first.len - 1 // cycle
 							}
-							win := wm.order_simple[wm.i_simple]
-							s_i := wm.stack_simple.index(win)
-							wm.stack_simple.delete(s_i)
-							wm.stack_simple << win
+							win := wm.order_first[wm.i_first]
+							// put it on top of the stack
+							s_i := wm.stack_first.index(win)
+							wm.stack_first.delete(s_i)
+							wm.stack_first << win
 						} else {
 							continue main_l
 						}
@@ -394,36 +393,38 @@ fn main() {
 				wm.check_goto_window(C.XK_9, key)
 			}
 			C.CreateNotify {}
-			C.MapNotify {
-				if unsafe { !wm.ev.xmap.override_redirect } {
+			C.MapNotify { // when the window is created
+				if unsafe { !wm.ev.xmap.override_redirect } { // if the window does not want to be managed by the WM
+					// get the window and add it to the arrays
 					wm.windows << unsafe { wm.ev.xmap.window }
-					if wm.double {
-						wm.stack_double << wm.windows.last()
-						wm.order_double << wm.windows.last()
-						wm.i_double = wm.order_double.len - 1
+					if wm.sec {
+						wm.stack_sec << wm.windows.last()
+						wm.order_sec << wm.windows.last()
+						wm.i_sec = wm.order_sec.len - 1
 					} else {
-						wm.stack_simple << wm.windows.last()
-						wm.order_simple << wm.windows.last()
-						wm.i_simple = wm.order_simple.len - 1
+						wm.stack_first << wm.windows.last()
+						wm.order_first << wm.windows.last()
+						wm.i_first = wm.order_first.len - 1
 					}
 					wm.show_window()
 				}
 			}
-			C.UnmapNotify {
+			C.UnmapNotify { // when the window is destroyed
+				// Remove the window
 				win := unsafe { wm.ev.xunmap.window }
 				unmapped_i := wm.windows.index(win)
 				if unmapped_i != -1 {
 					wm.windows.delete(unmapped_i)
-					if win in wm.order_double {
-						o_i := wm.order_double.index(win)
-						wm.order_double.delete(o_i)
-						s_i := wm.stack_double.index(win)
-						wm.stack_double.delete(s_i)
+					if win in wm.order_sec {
+						o_i := wm.order_sec.index(win)
+						wm.order_sec.delete(o_i)
+						s_i := wm.stack_sec.index(win)
+						wm.stack_sec.delete(s_i)
 					} else {
-						o_i := wm.order_simple.index(win)
-						wm.order_simple.delete(o_i)
-						s_i := wm.stack_simple.index(win)
-						wm.stack_simple.delete(s_i)
+						o_i := wm.order_first.index(win)
+						wm.order_first.delete(o_i)
+						s_i := wm.stack_first.index(win)
+						wm.stack_first.delete(s_i)
 					}
 					wm.show_window()
 				}
