@@ -215,6 +215,8 @@ fn (mut wm WinMan) check_goto_window(nb_key int, key C.XKeyEvent) {
 fn main() {
 	mut wm := WinMan{}
 
+	println("width ${width}  height ${height} sec_x ${sec_x} sec_y ${sec_y} sec_w ${sec_w} sec_h ${sec_h}")
+
 	// Set the error handler
 	C.XSetErrorHandler(error_handler)
 
@@ -258,6 +260,7 @@ fn main() {
 			C.SelectionNotify {}
 			C.SelectionRequest {}
 			C.KeyPress {
+	println("width ${width}  height ${height} sec_x ${sec_x} sec_y ${sec_y} sec_w ${sec_w} sec_h ${sec_h}")
 				key := unsafe { wm.ev.xkey }
 				if key.keycode == C.XKeysymToKeycode(dpy, terminal_key.key)
 					&& key.state == terminal_key.mod {
