@@ -17,12 +17,14 @@ const dpy = C.XOpenDisplay(unsafe { nil })
 const root = C.XDefaultRootWindow(dpy)
 
 // Constants to manage the size of the different screens
-const width = C.XDisplayWidth(dpy, 0) // first screen
-const height = C.XDisplayHeight(dpy, 0)
+const first_screen = C.XScreenOfDisplay(dpy, 0)
+const sec_screen = C.XScreenOfDisplay(dpy, 1)
+const width = C.XWidthOfScreen(first_screen) // first screen
+const height = C.XHeightOfScreen(first_screen)
 const sec_x = width // for the screen to be adjacent
 const sec_y = 0
-const sec_w = C.XDisplayWidth(dpy, 1)
-const sec_h = C.XDisplayHeight(dpy, 1)
+const sec_w = C.XWidthOfScreen(sec_screen) // first screen
+const sec_h = C.XHeightOfScreen(sec_screen)
 
 struct WinMan {
 mut:
@@ -260,7 +262,6 @@ fn main() {
 			C.SelectionNotify {}
 			C.SelectionRequest {}
 			C.KeyPress {
-	println("width ${width}  height ${height} sec_x ${sec_x} sec_y ${sec_y} sec_w ${sec_w} sec_h ${sec_h}")
 				key := unsafe { wm.ev.xkey }
 				if key.keycode == C.XKeysymToKeycode(dpy, terminal_key.key)
 					&& key.state == terminal_key.mod {

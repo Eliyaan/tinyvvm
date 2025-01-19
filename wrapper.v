@@ -188,6 +188,11 @@ struct C.XErrorEvent {
 	minor_code   u8  // Minor op-code of failed request
 	resourceid   C.XID
 }
+fn C.XScreenOfDisplay(&C.Display, int) &C.Screen
+
+fn C.XWidthOfScreen(&C.Screen) int
+
+fn C.XHeightOfScreen(&C.Screen) int
 
 fn C.XStringToKeysym(&u8) KeySym
 
