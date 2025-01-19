@@ -16,6 +16,14 @@ const catched_events = i32(C.SubstructureNotifyMask | C.StructureNotifyMask | C.
 const dpy = C.XOpenDisplay(unsafe { nil })
 const root = C.XDefaultRootWindow(dpy)
 
+// Constants to manage the size of the different screens
+const width = C.XDisplayWidth(dpy, 0) // first screen
+const height = C.XDisplayHeight(dpy, 0)
+const sec_x = width // for the screen to be adjacent
+const sec_y = 0
+const sec_w = C.XDisplayWidth(dpy, 1)
+const sec_h = C.XDisplayHeight(dpy, 1)
+
 struct WinMan {
 mut:
 	ev          C.XEvent
