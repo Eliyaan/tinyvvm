@@ -19,3 +19,7 @@ const bright_up_key = KeyMod{C.XK_C, mod_super}
 const bright_up_name = 'brightnessctl set 1000+'
 const bright_down_key = KeyMod{C.XK_C, mod_super | mod_shift}
 const bright_down_name = 'brightnessctl set 1000-'
+
+// Dimentions of the first screen (in pixels)
+const width = 1366
+const height = 768

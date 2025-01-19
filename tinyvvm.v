@@ -17,14 +17,11 @@ const dpy = C.XOpenDisplay(unsafe { nil })
 const root = C.XDefaultRootWindow(dpy)
 
 // Constants to manage the size of the different screens
-const first_screen = C.XScreenOfDisplay(dpy, 0)
-const sec_screen = C.XScreenOfDisplay(dpy, 1)
-const width = C.XWidthOfScreen(first_screen) // first screen
-const height = C.XHeightOfScreen(first_screen)
+const screen = C.XScreenOfDisplay(dpy, 0)
 const sec_x = width // for the screen to be adjacent
 const sec_y = 0
-const sec_w = C.XWidthOfScreen(sec_screen) // first screen
-const sec_h = C.XHeightOfScreen(sec_screen)
+const sec_w = C.XWidthOfScreen(screen) - width // width of the total size - the width of the first screen (that rarely changes)
+const sec_h = C.XHeightOfScreen(screen) // the width of the total size is the width of the biggest screen
 
 struct WinMan {
 mut:
